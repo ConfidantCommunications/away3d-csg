@@ -17,7 +17,6 @@
 -D lime-dom
 -D lime-howlerjs
 -D lime-html5
--D openfl-disable-handle-error
 -D html5
 -D web
 --remap flash:openfl

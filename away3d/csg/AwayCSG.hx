@@ -27,16 +27,29 @@ class AwayCSG
 	{
 		var polygons:Array<Polygon> = new Array<Polygon>();
 		
-		// var i:Int = 0;
+		var i:Int = 0;
 		for  (subMesh in mesh.subMeshes) {
 			polygons = polygons.concat(fromSubGeometry(mesh, subMesh.subGeometry, subMesh));
 		}
 		// trace(polygons);
 		return CSG.fromPolygons(polygons);
-	}  
+	} 
 
-	//BabylonHX has its own version of fromMesh and toMesh:
-	//https://github.com/vujadin/BabylonHx/blob/master/com/babylonhx/mesh/csg/CSG.hx
+	//this one sorta works in rta
+	/* public static function fromMesh(mesh:Mesh):CSG
+	{
+		var polygons:Array<Polygon> = new Array<Polygon>();
+		
+		var i:Int = 0;
+		for  (subGeometry in mesh.geometry.subGeometries) {
+			// trace("casting subGeometry 1");
+			var subMesh = mesh.subMeshes[i];
+			polygons = polygons.concat(fromSubGeometry(mesh, subGeometry, subMesh));
+		}
+		// trace(polygons);
+		return CSG.fromPolygons(polygons);
+	}  */
+
 
 	
 	/**
@@ -49,11 +62,14 @@ class AwayCSG
 		var step = 3;
 
 		var stride = geometry.vertexStride ; //13
-		// var skip:Int = stride - 9;
-		var uvstride:Int = geometry.UVStride;//2;
-		// var uvskip:Int = uvstride - 2;
-		//vertices * stride == total vertexData
-		var vnstride:Int = geometry.vertexNormalStride;
+		/*
+			GC: Now using UVOffset rather than UVStride. With compact geometries, the 
+			vertex data, UV and normals are all in the same buffer. Stride is 13 and
+			for each stride the vertices, UVs and Normals are positioned at the offset 
+			from that.
+		*/
+		var uvoffset:Int = geometry.UVOffset;//2;
+		var vnoffset:Int = geometry.vertexNormalOffset;
 
 		var i = 0;
 		while(i < geometry.indexData.length) {
@@ -93,21 +109,31 @@ class AwayCSG
 			v2 = mesh.transform.transformVector(v2);
 			v3 = mesh.transform.transformVector(v3);
 			
-			uv1.x = geometry.UVData[(a*uvstride)+0];
-			uv1.y = geometry.UVData[(a*uvstride)+1];
+			/*
+				GC: Again with CompactSubGeometries, it turns out the vertexData
+				UVData and vertexNormalData actually return the same vertex buffer
+			*/
+			uv1.x = geometry.UVData[(a*stride)+uvoffset+0];
+			uv1.y = geometry.UVData[(a*stride)+uvoffset+1];
 
-			uv2.x = geometry.UVData[(b*uvstride)+0];
-			uv2.y = geometry.UVData[(b*uvstride)+1];
+			uv2.x = geometry.UVData[(b*stride)+uvoffset+0];
+			uv2.y = geometry.UVData[(b*stride)+uvoffset+1];
+
+			uv3.x = geometry.UVData[(c*stride)+uvoffset+0];
+			uv3.y = geometry.UVData[(c*stride)+uvoffset+1];
 			
-			uv3.x = geometry.UVData[(c*uvstride)+0];
-			uv3.y = geometry.UVData[(c*uvstride)+1];
-			
-			vn1.x = geometry.vertexNormalData[(a*vnstride)+0];
-			vn1.y = geometry.vertexNormalData[(a*vnstride)+1];
-			vn2.x = geometry.vertexNormalData[(b*vnstride)+0];
-			vn2.y = geometry.vertexNormalData[(b*vnstride)+1];
-			vn3.x = geometry.vertexNormalData[(c*vnstride)+0];
-			vn3.y = geometry.vertexNormalData[(c*vnstride)+1];
+			/*
+				GC: Normals have a z coordinate too. This was missing
+			*/
+			vn1.x = geometry.vertexNormalData[(a*stride)+vnoffset+0];
+			vn1.y = geometry.vertexNormalData[(a*stride)+vnoffset+1];
+			vn1.z = geometry.vertexNormalData[(a*stride)+vnoffset+2];
+			vn2.x = geometry.vertexNormalData[(b*stride)+vnoffset+0];
+			vn2.y = geometry.vertexNormalData[(b*stride)+vnoffset+1];
+			vn2.z = geometry.vertexNormalData[(b*stride)+vnoffset+2];
+			vn3.x = geometry.vertexNormalData[(c*stride)+vnoffset+0];
+			vn3.y = geometry.vertexNormalData[(c*stride)+vnoffset+1];
+			vn3.z = geometry.vertexNormalData[(c*stride)+vnoffset+2];
 			
 			//away3d away3d.csg.geom.Vertex doesn't have its own UV info
 			// subGeometry.updateUVData(uvs);
@@ -179,7 +205,6 @@ class AwayCSG
 				
 				for (sub in subGeometries) {
 					mesh.subMeshes.push(new SubMesh(sub, mesh, key));
-					
 				}
 			}
 			return mesh;
@@ -209,8 +234,15 @@ class AwayCSG
 			
 		// for (var i:int = 0; i < numVertices; i++) {
 			var v:Vector3D = polygon.vertices[i].pos;
-			var vert = new AwayCSGVertex(cast(polygon.vertices[i])); //not sure about the cast
+
+			/*
+				GC: Your comment was correct ;) 
+				It couldn't cast the normals or the UVs as additional params
+			*/
+			var p:AwayCSGVertex = cast polygon.vertices[i];
+			var vert = new AwayCSGVertex(p.pos, p.normal, p.uv); //not sure about the cast
 			var uv = vert.uv;
+			trace("CastUV:"+uv);
 			
 			vertices[(i*3)+0] = v.x * AWAY3D_VERTEX_CONVERSION_FACTOR;
 			vertices[(i*3)+1] = v.y * AWAY3D_VERTEX_CONVERSION_FACTOR;

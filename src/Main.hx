@@ -26,6 +26,7 @@ import openfl.geom.Vector3D;
 // import flash.utils.getTimer;
 // import openfl.utils.
 
+@:access(away3d.core.base.ISubGeometry)
 class Main extends Sprite
 {
 	//engine variables
@@ -53,7 +54,7 @@ class Main extends Sprite
 		
 		//setup the camera
 		_view.camera.z = -100;
-		_view.camera.y = 20;
+		_view.camera.y = 50;
 		_view.camera.lookAt(new Vector3D());
 		
 		_view.antiAlias = 4;
@@ -82,7 +83,10 @@ class Main extends Sprite
 		material3.lightPicker = lightPicker;
 		grassMaterial.lightPicker = lightPicker;
 		
-		 mesh1 = new Mesh(new CubeGeometry(1,1,1), grassMaterial);//grass
+		mesh1 = new Mesh(new CubeGeometry(1,1,1), grassMaterial);//grass
+		// GC:Debug 
+		// trace("MESH1 ====================");
+		// dumpGeom( mesh1 );
 		var mesh1b:Mesh = new Mesh(new CubeGeometry(1,1,1), material1);//red
 		var mesh2:Mesh = new Mesh(new SphereGeometry(1), material2);//green
 		mesh2.y = mesh2.z = 0.5;
@@ -113,6 +117,9 @@ class Main extends Sprite
 		// _view.scene.addChild(combinedMesh); 
 		var csg1:CSG = AwayCSG.fromMesh(combinedMesh);//mesh1
 		var csg2:CSG = AwayCSG.fromMesh(mesh2);//green sphere
+		// GC:Debug 
+		// var m1:CSG = AwayCSG.fromMesh(mesh1);
+		// var m1b:CSG = AwayCSG.fromMesh(mesh1b);
 		
 		
 		var result:CSG = csg1.subtract(csg2);
@@ -120,8 +127,10 @@ class Main extends Sprite
 		// var result:CSG = csg1.intersect(csg2);
 		// var cube = CSG.cube(null,new Vector3D(.9,.9,.9));
 		_mesh = AwayCSG.toMesh(result);//result uses toSubGeometry, this should be okay
-		 
-		 
+
+		// GC:Debug 
+		// trace("_MESH ====================");
+		// dumpGeom( _mesh );
 
 		if(_mesh != null){
 			_mesh.scaleY = _mesh.scaleX = _mesh.scaleZ = 40;
@@ -164,6 +173,43 @@ class Main extends Sprite
 
 	}
 	
+	// GC:Debug 
+	// Dump function to look at the vertexData
+	function dumpGeom(m:Mesh) {
+		var step = 3;
+		trace("SubMeshes="+m.subMeshes.length);
+		for  (subMesh in m.subMeshes) {
+			var g = subMesh.subGeometry;
+			var vstride = g.vertexStride ; //13
+			var uvstride:Int = g.UVStride;//2;
+			var nstride:Int = g.vertexNormalStride;
+
+			trace("VStride="+vstride+" UVStride="+uvstride+" NStride="+nstride+" step="+step);
+			var i = 0;
+			while(i < g.indexData.length) {
+				var a:Int = g.indexData[i+0];
+				var b:Int = g.indexData[i+1];
+				var c:Int = g.indexData[i+2];
+
+				var t = "";
+				t += "V0("+ g.vertexData[(a*vstride)+0]+", "+g.vertexData[(a*vstride)+1]+", "+g.vertexData[(a*vstride)+2]+") ";
+				t += "V1("+ g.vertexData[(b*vstride)+0]+", "+g.vertexData[(b*vstride)+1]+", "+g.vertexData[(b*vstride)+2]+") ";
+				t += "V2("+ g.vertexData[(c*vstride)+0]+", "+g.vertexData[(c*vstride)+1]+", "+g.vertexData[(c*vstride)+2]+") ";
+	
+				t += "UV0("+ g.UVData[(a*uvstride)+0]+", "+g.UVData[(a*uvstride)+1]+") ";
+				t += "UV1("+ g.UVData[(b*uvstride)+0]+", "+g.UVData[(b*uvstride)+1]+") ";
+				t += "UV2("+ g.UVData[(c*uvstride)+0]+", "+g.UVData[(c*uvstride)+1]+") ";
+				
+				t += "N0("+ g.vertexNormalData[(a*nstride)+0]+", "+g.vertexNormalData[(a*nstride)+1]+", "+g.vertexNormalData[(a*nstride)+2]+") ";
+				t += "N1("+ g.vertexNormalData[(b*nstride)+0]+", "+g.vertexNormalData[(b*nstride)+1]+", "+g.vertexNormalData[(b*nstride)+2]+") ";
+				t += "N2("+ g.vertexNormalData[(c*nstride)+0]+", "+g.vertexNormalData[(c*nstride)+1]+", "+g.vertexNormalData[(c*nstride)+2]+") ";
+				trace(t);
+				
+				i += step;
+			}
+		}
+	}
+
 	/**
 	 * Initialise the lights
 	 */

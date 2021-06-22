@@ -891,7 +891,7 @@ ApplicationMain.main = function() {
 ApplicationMain.create = function(config) {
 	var app = new openfl_display_Application();
 	ManifestResources.init(config);
-	app.meta.h["build"] = "439";
+	app.meta.h["build"] = "1";
 	app.meta.h["company"] = "";
 	app.meta.h["file"] = "Main";
 	app.meta.h["name"] = "Away3D CSG";
@@ -1402,7 +1402,6 @@ lime_utils_ObjectPool.prototype = {
 		if(!this.__pool.exists(object)) {
 			this.__pool.set(object,false);
 			this.clean(object);
-			this.__pool.set(object,false);
 			if(this.__inactiveObject0 == null) {
 				this.__inactiveObject0 = object;
 			} else if(this.__inactiveObject1 == null) {
@@ -1445,7 +1444,6 @@ lime_utils_ObjectPool.prototype = {
 					this.__inactiveObject1 = this.__inactiveObjectList.pop();
 				}
 			}
-			this.__pool.set(object1,true);
 			this.inactiveObjects--;
 			this.activeObjects++;
 			object = object1;
@@ -1459,15 +1457,9 @@ lime_utils_ObjectPool.prototype = {
 		return object;
 	}
 	,release: function(object) {
-		if(!this.__pool.exists(object)) {
-			lime_utils_Log.error("Object is not a member of the pool",{ fileName : "lime/utils/ObjectPool.hx", lineNumber : 102, className : "lime.utils.ObjectPool", methodName : "release"});
-		} else if(!this.__pool.get(object)) {
-			lime_utils_Log.error("Object has already been released",{ fileName : "lime/utils/ObjectPool.hx", lineNumber : 106, className : "lime.utils.ObjectPool", methodName : "release"});
-		}
 		this.activeObjects--;
 		if(this.__size == null || this.activeObjects + this.inactiveObjects < this.__size) {
 			this.clean(object);
-			this.__pool.set(object,false);
 			if(this.__inactiveObject0 == null) {
 				this.__inactiveObject0 = object;
 			} else if(this.__inactiveObject1 == null) {
@@ -1497,7 +1489,6 @@ lime_utils_ObjectPool.prototype = {
 		}
 	}
 	,__addInactive: function(object) {
-		this.__pool.set(object,false);
 		if(this.__inactiveObject0 == null) {
 			this.__inactiveObject0 = object;
 		} else if(this.__inactiveObject1 == null) {
@@ -1524,7 +1515,6 @@ lime_utils_ObjectPool.prototype = {
 				this.__inactiveObject1 = this.__inactiveObjectList.pop();
 			}
 		}
-		this.__pool.set(object,true);
 		this.inactiveObjects--;
 		this.activeObjects++;
 		return object;
@@ -4275,7 +4265,7 @@ var Main = function() {
 	this._view = new away3d_containers_View3D();
 	this.addChild(this._view);
 	this._view.get_camera().set_z(-100);
-	this._view.get_camera().set_y(20);
+	this._view.get_camera().set_y(50);
 	this._view.get_camera().lookAt(new openfl_geom_Vector3D());
 	this._view.set_antiAlias(4);
 	this.initLights();
@@ -4315,7 +4305,7 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 		g.addSubGeometry(mesh1b.get_geometry().get_subGeometries().get(0));
 		combinedMesh.get_subMeshes().get(0).set_material(material1);
 		combinedMesh.get_subMeshes().get(1).set_material(grassMaterial);
-		haxe_Log.trace("submesh count:" + combinedMesh.get_subMeshes().get_length(),{ fileName : "src/Main.hx", lineNumber : 103, className : "Main", methodName : "test"});
+		haxe_Log.trace("submesh count:" + combinedMesh.get_subMeshes().get_length(),{ fileName : "src/Main.hx", lineNumber : 107, className : "Main", methodName : "test"});
 		var csg1 = away3d_csg_AwayCSG.fromMesh(combinedMesh);
 		var csg2 = away3d_csg_AwayCSG.fromMesh(mesh2);
 		var result = csg1.subtract(csg2);
@@ -4326,6 +4316,37 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 			this._view.get_scene().addChild(this._mesh);
 			this._view.get_scene().addChild(this.mesh1);
 			this.mesh1.set_x(80);
+		}
+	}
+	,dumpGeom: function(m) {
+		var step = 3;
+		haxe_Log.trace("SubMeshes=" + m.get_subMeshes().get_length(),{ fileName : "src/Main.hx", lineNumber : 180, className : "Main", methodName : "dumpGeom"});
+		var subMesh = m.get_subMeshes().iterator();
+		while(subMesh.hasNext()) {
+			var subMesh1 = subMesh.next();
+			var g = subMesh1.get_subGeometry();
+			var vstride = g.get_vertexStride();
+			var uvstride = g.get_UVStride();
+			var nstride = g.get_vertexNormalStride();
+			haxe_Log.trace("VStride=" + vstride + " UVStride=" + uvstride + " NStride=" + nstride + " step=" + step,{ fileName : "src/Main.hx", lineNumber : 187, className : "Main", methodName : "dumpGeom"});
+			var i = 0;
+			while(i < g.get_indexData().get_length()) {
+				var a = g.get_indexData().get(i);
+				var b = g.get_indexData().get(i + 1);
+				var c = g.get_indexData().get(i + 2);
+				var t = "";
+				t += "V0(" + g.get_vertexData().get(a * vstride) + ", " + g.get_vertexData().get(a * vstride + 1) + ", " + g.get_vertexData().get(a * vstride + 2) + ") ";
+				t += "V1(" + g.get_vertexData().get(b * vstride) + ", " + g.get_vertexData().get(b * vstride + 1) + ", " + g.get_vertexData().get(b * vstride + 2) + ") ";
+				t += "V2(" + g.get_vertexData().get(c * vstride) + ", " + g.get_vertexData().get(c * vstride + 1) + ", " + g.get_vertexData().get(c * vstride + 2) + ") ";
+				t += "UV0(" + g.get_UVData().get(a * uvstride) + ", " + g.get_UVData().get(a * uvstride + 1) + ") ";
+				t += "UV1(" + g.get_UVData().get(b * uvstride) + ", " + g.get_UVData().get(b * uvstride + 1) + ") ";
+				t += "UV2(" + g.get_UVData().get(c * uvstride) + ", " + g.get_UVData().get(c * uvstride + 1) + ") ";
+				t += "N0(" + g.get_vertexNormalData().get(a * nstride) + ", " + g.get_vertexNormalData().get(a * nstride + 1) + ", " + g.get_vertexNormalData().get(a * nstride + 2) + ") ";
+				t += "N1(" + g.get_vertexNormalData().get(b * nstride) + ", " + g.get_vertexNormalData().get(b * nstride + 1) + ", " + g.get_vertexNormalData().get(b * nstride + 2) + ") ";
+				t += "N2(" + g.get_vertexNormalData().get(c * nstride) + ", " + g.get_vertexNormalData().get(c * nstride + 1) + ", " + g.get_vertexNormalData().get(c * nstride + 2) + ") ";
+				haxe_Log.trace(t,{ fileName : "src/Main.hx", lineNumber : 206, className : "Main", methodName : "dumpGeom"});
+				i += step;
+			}
 		}
 	}
 	,initLights: function() {
@@ -4542,7 +4563,7 @@ ManifestResources.init = function(config) {
 		ManifestResources.rootPath = "./";
 	}
 	var bundle;
-	var data = "{\"name\":null,\"assets\":\"aoy4:pathy18:assets%2Fgrass.jpgy4:sizei83926y4:typey5:IMAGEy2:idR1y7:preloadtgh\",\"rootPath\":null,\"version\":2,\"libraryArgs\":[],\"libraryType\":null}";
+	var data = "{\"name\":null,\"assets\":\"aoy4:pathy18:assets%2Fgrass.jpgy4:sizei126085y4:typey5:IMAGEy2:idR1y7:preloadtgh\",\"rootPath\":null,\"version\":2,\"libraryArgs\":[],\"libraryType\":null}";
 	var manifest = lime_utils_AssetManifest.parse(data,ManifestResources.rootPath);
 	var library = lime_utils_AssetLibrary.fromManifest(manifest);
 	lime_utils_Assets.registerLibrary("default",library);
@@ -17838,8 +17859,8 @@ away3d_csg_AwayCSG.fromSubGeometry = function(mesh,geometry,subMesh) {
 	var polygons = [];
 	var step = 3;
 	var stride = geometry.get_vertexStride();
-	var uvstride = geometry.get_UVStride();
-	var vnstride = geometry.get_vertexNormalStride();
+	var uvoffset = geometry.get_UVOffset();
+	var vnoffset = geometry.get_vertexNormalOffset();
 	var i = 0;
 	while(i < geometry.get_indexData().get_length()) {
 		var a = geometry.get_indexData().get(i);
@@ -17867,18 +17888,21 @@ away3d_csg_AwayCSG.fromSubGeometry = function(mesh,geometry,subMesh) {
 		v1 = mesh.get_transform().transformVector(v1);
 		v2 = mesh.get_transform().transformVector(v2);
 		v3 = mesh.get_transform().transformVector(v3);
-		uv1.x = geometry.get_UVData().get(a * uvstride);
-		uv1.y = geometry.get_UVData().get(a * uvstride + 1);
-		uv2.x = geometry.get_UVData().get(b * uvstride);
-		uv2.y = geometry.get_UVData().get(b * uvstride + 1);
-		uv3.x = geometry.get_UVData().get(c * uvstride);
-		uv3.y = geometry.get_UVData().get(c * uvstride + 1);
-		vn1.x = geometry.get_vertexNormalData().get(a * vnstride);
-		vn1.y = geometry.get_vertexNormalData().get(a * vnstride + 1);
-		vn2.x = geometry.get_vertexNormalData().get(b * vnstride);
-		vn2.y = geometry.get_vertexNormalData().get(b * vnstride + 1);
-		vn3.x = geometry.get_vertexNormalData().get(c * vnstride);
-		vn3.y = geometry.get_vertexNormalData().get(c * vnstride + 1);
+		uv1.x = geometry.get_UVData().get(a * stride + uvoffset);
+		uv1.y = geometry.get_UVData().get(a * stride + uvoffset + 1);
+		uv2.x = geometry.get_UVData().get(b * stride + uvoffset);
+		uv2.y = geometry.get_UVData().get(b * stride + uvoffset + 1);
+		uv3.x = geometry.get_UVData().get(c * stride + uvoffset);
+		uv3.y = geometry.get_UVData().get(c * stride + uvoffset + 1);
+		vn1.x = geometry.get_vertexNormalData().get(a * stride + vnoffset);
+		vn1.y = geometry.get_vertexNormalData().get(a * stride + vnoffset + 1);
+		vn1.z = geometry.get_vertexNormalData().get(a * stride + vnoffset + 2);
+		vn2.x = geometry.get_vertexNormalData().get(b * stride + vnoffset);
+		vn2.y = geometry.get_vertexNormalData().get(b * stride + vnoffset + 1);
+		vn2.z = geometry.get_vertexNormalData().get(b * stride + vnoffset + 2);
+		vn3.x = geometry.get_vertexNormalData().get(c * stride + vnoffset);
+		vn3.y = geometry.get_vertexNormalData().get(c * stride + vnoffset + 1);
+		vn3.z = geometry.get_vertexNormalData().get(c * stride + vnoffset + 2);
 		vertices.push(new away3d_csg_AwayCSGVertex(v1,vn1,uv1));
 		vertices.push(new away3d_csg_AwayCSGVertex(v2,vn2,uv2));
 		vertices.push(new away3d_csg_AwayCSGVertex(v3,vn3,uv3));
@@ -17936,8 +17960,10 @@ away3d_csg_AwayCSG.toSubGeometry = function(polygon) {
 	while(_g < _g1) {
 		var i = _g++;
 		var v = polygon.vertices[i].get_pos();
-		var vert = new away3d_csg_AwayCSGVertex(polygon.vertices[i]);
+		var p = polygon.vertices[i];
+		var vert = new away3d_csg_AwayCSGVertex(p.get_pos(),p.get_normal(),p.get_uv());
 		var uv = vert.get_uv();
+		haxe_Log.trace("CastUV:" + Std.string(uv),{ fileName : "away3d/csg/AwayCSG.hx", lineNumber : 245, className : "away3d.csg.AwayCSG", methodName : "toSubGeometry"});
 		vertices.set(i * 3,v.x);
 		vertices.set(i * 3 + 1,v.y);
 		vertices.set(i * 3 + 2,v.z);
@@ -18024,10 +18050,10 @@ away3d_csg_AwayCSGVertex.prototype = $extend(away3d_csg_geom_Vertex.prototype,{
 		return this.uv = value;
 	}
 	,clone: function() {
-		return new away3d_csg_AwayCSGVertex(this.get_pos().clone(),this.get_uv().clone(),this.get_normal().clone());
+		return new away3d_csg_AwayCSGVertex(this.get_pos().clone(),this.get_normal().clone(),this.get_uv().clone());
 	}
 	,interpolate: function(other,t) {
-		return new away3d_csg_AwayCSGVertex(this.lerp(this.get_pos(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_pos(),t),this.lerp(this.get_uv(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_uv(),t),this.lerp(this.get_normal(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_normal(),t));
+		return new away3d_csg_AwayCSGVertex(this.lerp(this.get_pos(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_pos(),t),this.lerp(this.get_normal(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_normal(),t),this.lerp(this.get_uv(),(js_Boot.__cast(other , away3d_csg_AwayCSGVertex)).get_uv(),t));
 	}
 	,__class__: away3d_csg_AwayCSGVertex
 });
@@ -47336,7 +47362,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 877119;
+	this.version = 718697;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = "lime.utils.AssetCache";
@@ -78952,7 +78978,13 @@ openfl_display_Stage.prototype = $extend(openfl_display_DisplayObjectContainer.p
 				var dispatcher = dispatchers[_g];
 				++_g;
 				if(dispatcher.stage == this || dispatcher.stage == null) {
-					dispatcher.__dispatch(event);
+					try {
+						dispatcher.__dispatch(event);
+					} catch( _g1 ) {
+						haxe_NativeStackTrace.lastError = _g1;
+						var e = haxe_Exception.caught(_g1).unwrap();
+						this.__handleError(e);
+					}
 				}
 			}
 		}
@@ -78992,7 +79024,14 @@ openfl_display_Stage.prototype = $extend(openfl_display_DisplayObjectContainer.p
 		}
 	}
 	,__dispatchEvent: function(event) {
-		return openfl_display_DisplayObjectContainer.prototype.__dispatchEvent.call(this,event);
+		try {
+			return openfl_display_DisplayObjectContainer.prototype.__dispatchEvent.call(this,event);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+			return false;
+		}
 	}
 	,__dispatchPendingMouseEvent: function() {
 		if(this.__pendingMouseEvent) {
@@ -79001,45 +79040,58 @@ openfl_display_Stage.prototype = $extend(openfl_display_DisplayObjectContainer.p
 		}
 	}
 	,__dispatchStack: function(event,stack) {
-		var target;
-		var length = stack.length;
-		if(length == 0) {
-			event.eventPhase = 2;
-			target = event.target;
-			target.__dispatch(event);
-		} else {
-			event.eventPhase = 1;
-			event.target = stack[stack.length - 1];
-			var _g = 0;
-			var _g1 = length - 1;
-			while(_g < _g1) {
-				var i = _g++;
-				stack[i].__dispatch(event);
-				if(event.__isCanceled) {
-					return;
-				}
-			}
-			event.eventPhase = 2;
-			target = event.target;
-			target.__dispatch(event);
-			if(event.__isCanceled) {
-				return;
-			}
-			if(event.bubbles) {
-				event.eventPhase = 3;
-				var i = length - 2;
-				while(i >= 0) {
+		try {
+			var target;
+			var length = stack.length;
+			if(length == 0) {
+				event.eventPhase = 2;
+				target = event.target;
+				target.__dispatch(event);
+			} else {
+				event.eventPhase = 1;
+				event.target = stack[stack.length - 1];
+				var _g = 0;
+				var _g1 = length - 1;
+				while(_g < _g1) {
+					var i = _g++;
 					stack[i].__dispatch(event);
 					if(event.__isCanceled) {
 						return;
 					}
-					--i;
+				}
+				event.eventPhase = 2;
+				target = event.target;
+				target.__dispatch(event);
+				if(event.__isCanceled) {
+					return;
+				}
+				if(event.bubbles) {
+					event.eventPhase = 3;
+					var i = length - 2;
+					while(i >= 0) {
+						stack[i].__dispatch(event);
+						if(event.__isCanceled) {
+							return;
+						}
+						--i;
+					}
 				}
 			}
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
 		}
 	}
 	,__dispatchTarget: function(target,event) {
-		return target.__dispatchEvent(event);
+		try {
+			return target.__dispatchEvent(event);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+			return false;
+		}
 	}
 	,__drag: function(mouse) {
 		var parent = this.__dragObject.parent;
@@ -79754,16 +79806,40 @@ openfl_display_Stage.prototype = $extend(openfl_display_DisplayObjectContainer.p
 		this.__onLimeWindowCreate($window);
 	}
 	,__onLimeGamepadAxisMove: function(gamepad,axis,value) {
-		openfl_ui_GameInput.__onGamepadAxisMove(gamepad,axis,value);
+		try {
+			openfl_ui_GameInput.__onGamepadAxisMove(gamepad,axis,value);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+		}
 	}
 	,__onLimeGamepadButtonDown: function(gamepad,button) {
-		openfl_ui_GameInput.__onGamepadButtonDown(gamepad,button);
+		try {
+			openfl_ui_GameInput.__onGamepadButtonDown(gamepad,button);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+		}
 	}
 	,__onLimeGamepadButtonUp: function(gamepad,button) {
-		openfl_ui_GameInput.__onGamepadButtonUp(gamepad,button);
+		try {
+			openfl_ui_GameInput.__onGamepadButtonUp(gamepad,button);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+		}
 	}
 	,__onLimeGamepadConnect: function(gamepad) {
-		openfl_ui_GameInput.__onGamepadConnect(gamepad);
+		try {
+			openfl_ui_GameInput.__onGamepadConnect(gamepad);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+		}
 		var _g = $bind(this,this.__onLimeGamepadAxisMove);
 		var gamepad1 = gamepad;
 		var tmp = function(axis,value) {
@@ -79790,7 +79866,13 @@ openfl_display_Stage.prototype = $extend(openfl_display_DisplayObjectContainer.p
 		gamepad.onDisconnect.add(tmp);
 	}
 	,__onLimeGamepadDisconnect: function(gamepad) {
-		openfl_ui_GameInput.__onGamepadDisconnect(gamepad);
+		try {
+			openfl_ui_GameInput.__onGamepadDisconnect(gamepad);
+		} catch( _g ) {
+			haxe_NativeStackTrace.lastError = _g;
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.__handleError(e);
+		}
 	}
 	,__onLimeKeyDown: function($window,keyCode,modifier) {
 		if(this.window == null || this.window != $window) {
@@ -93868,7 +93950,7 @@ while(_g < _g1) {
 }
 lime_system_CFFI.available = false;
 lime_system_CFFI.enabled = false;
-lime_utils_Log.level = 4;
+lime_utils_Log.level = 3;
 if(typeof console == "undefined") {
 	console = {}
 }
@@ -96451,7 +96533,6 @@ haxe_lang_Iterable.__meta__ = { obj : { SuppressWarnings : ["checkstyle:FieldDoc
 ApplicationMain.main();
 })(typeof exports != "undefined" ? exports : typeof window != "undefined" ? window : typeof self != "undefined" ? self : this, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
 
-//# sourceMappingURL=Main.js.map
 });
 $hx_exports.lime = $hx_exports.lime || {};
 $hx_exports.lime.$scripts = $hx_exports.lime.$scripts || {};
