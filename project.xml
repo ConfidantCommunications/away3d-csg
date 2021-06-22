@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="Away3D CSG" package="ca.confidant.away3d" version="1.0.0" />
+	<app main="Main" file="Main" path="bin" />
+	
+	<window background="0xffffff" orientation="landscape" />
+	<window width="1024" height="700" if="desktop" />
+	
+	<source path="src" />
+	
+	<haxelib name="away3d" />
+	<assets path="assets" include="*" embed="true" />
+
+	
+	
+</project>
