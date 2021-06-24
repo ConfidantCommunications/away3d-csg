@@ -205,6 +205,7 @@ class AwayCSG
 				
 				for (sub in subGeometries) {
 					mesh.subMeshes.push(new SubMesh(sub, mesh, key));
+					mesh.geometry.subGeometries.push( sub );//required to update bounding box and obtain proper frustum clipping
 				}
 			}
 			return mesh;
