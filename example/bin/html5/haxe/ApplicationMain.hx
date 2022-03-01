@@ -15,11 +15,11 @@ class ApplicationMain
 	#if !macro
 	public static function main()
 	{
-		lime.system.System.__registerEntryPoint("./src/Simple_CSG_Demo", create);
+		lime.system.System.__registerEntryPoint("Main", create);
 
 		#if (js && html5)
 		#if (munit || utest)
-		lime.system.System.embed("./src/Simple_CSG_Demo", null, 0, 0);
+		lime.system.System.embed("Main", null, 0, 0);
 		#end
 		#else
 		create(null);
@@ -32,9 +32,9 @@ class ApplicationMain
 
 		ManifestResources.init(config);
 
-		app.meta["build"] = "2";
+		app.meta["build"] = "5";
 		app.meta["company"] = "";
-		app.meta["file"] = "./src/Simple_CSG_Demo";
+		app.meta["file"] = "Main";
 		app.meta["name"] = "Away3D CSG";
 		app.meta["packageName"] = "ca.confidant.away3d";
 		app.meta["version"] = "1.0.0";
@@ -65,7 +65,7 @@ class ApplicationMain
 
 		attributes.context = {
 			antialiasing: 0,
-			background: 0,
+			background: 16777215,
 			colorDepth: 32,
 			depth: true,
 			hardware: true,
@@ -99,7 +99,7 @@ class ApplicationMain
 		app.createWindow(attributes);
 		
 		#elseif !air
-		app.window.context.attributes.background = 0;
+		app.window.context.attributes.background = 16777215;
 		app.window.frameRate = 60;
 		#end
 
@@ -163,7 +163,7 @@ class ApplicationMain
 	{
 		var hasMain = false;
 
-		switch (Context.follow(Context.getType("Simple_CSG_Demo")))
+		switch (Context.follow(Context.getType("Main")))
 		{
 			case TInst(t, params):
 
@@ -179,7 +179,7 @@ class ApplicationMain
 
 				if (hasMain)
 				{
-					return Context.parse("@:privateAccess Simple_CSG_Demo.main()", Context.currentPos());
+					return Context.parse("@:privateAccess Main.main()", Context.currentPos());
 				}
 				else if (type.constructor != null)
 				{
@@ -198,12 +198,12 @@ class ApplicationMain
 				}
 				else
 				{
-					Context.fatalError("Main class \"Simple_CSG_Demo\" has neither a static main nor a constructor.", Context.currentPos());
+					Context.fatalError("Main class \"Main\" has neither a static main nor a constructor.", Context.currentPos());
 				}
 
 			default:
 
-				Context.fatalError("Main class \"Simple_CSG_Demo\" isn't a class.", Context.currentPos());
+				Context.fatalError("Main class \"Main\" isn't a class.", Context.currentPos());
 		}
 
 		return null;
@@ -265,7 +265,7 @@ class ApplicationMain
 
 #if !macro
 @:build(DocumentClass.build())
-@:keep @:dox(hide) class DocumentClass extends Simple_CSG_Demo {}
+@:keep @:dox(hide) class DocumentClass extends Main {}
 #else
 class DocumentClass
 {

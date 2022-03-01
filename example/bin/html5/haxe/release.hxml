@@ -1,13 +1,14 @@
 -main ApplicationMain 
--cp /usr/lib/haxe/lib/away3d/git
+-cp /usr/local/lib/haxe/lib/away3d/5,0,9
 -D away3d=5.0.9
 --macro openfl._internal.macros.ExtraParams.include()
--cp /usr/lib/haxe/lib/openfl/8,9,7/src
+-cp /usr/local/lib/haxe/lib/openfl/8,9,7/src
 -D openfl=8.9.7
 --macro lime._internal.macros.DefineMacro.run()
--cp /usr/lib/haxe/lib/lime/7,8,0/src
+-cp /usr/local/lib/haxe/lib/lime/7,8,0/src
 -D lime=7.8.0
--cp Source
+-cp src
+-cp ../
 -D tools=7.8.0
 -D lime-canvas
 -D howlerjs
@@ -17,10 +18,10 @@
 -D lime-dom
 -D lime-howlerjs
 -D lime-html5
+-D openfl-disable-handle-error
 -D html5
 -D web
 --remap flash:openfl
--js src/html5/bin/./src/Simple_CSG_Demo.js
--cp src/html5/haxe
+-js bin/html5/bin/Main.js
+-cp bin/html5/haxe
 -D html5
--debug

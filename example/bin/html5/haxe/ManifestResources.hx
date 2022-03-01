@@ -66,7 +66,7 @@ import sys.FileSystem;
 
 		#else
 
-		data = '{"name":null,"assets":"ah","rootPath":null,"version":2,"libraryArgs":[],"libraryType":null}';
+		data = '{"name":null,"assets":"aoy4:pathy18:assets%2Fgrass.jpgy4:sizei126085y4:typey5:IMAGEy2:idR1y7:preloadtgoR0y28:assets%2Ftrinket_diffuse.jpgR2i262144R3R4R5R7R6tgoR0y27:assets%2Ftrinket_normal.jpgR2i131072R3R4R5R8R6tgoR0y29:assets%2Ftrinket_specular.jpgR2i131072R3R4R5R9R6tgh","rootPath":null,"version":2,"libraryArgs":[],"libraryType":null}';
 		manifest = AssetManifest.parse (data, rootPath);
 		library = AssetLibrary.fromManifest (manifest);
 		Assets.registerLibrary ("default", library);
@@ -94,11 +94,19 @@ null
 #if !display
 #if flash
 
+@:keep @:bind @:noCompletion #if display private #end class __ASSET__assets_grass_jpg extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
+@:keep @:bind @:noCompletion #if display private #end class __ASSET__assets_trinket_diffuse_jpg extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
+@:keep @:bind @:noCompletion #if display private #end class __ASSET__assets_trinket_normal_jpg extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
+@:keep @:bind @:noCompletion #if display private #end class __ASSET__assets_trinket_specular_jpg extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
 @:keep @:bind @:noCompletion #if display private #end class __ASSET__manifest_default_json extends null { }
 
 
 #elseif (desktop || cpp)
 
+@:keep @:image("assets/grass.jpg") @:noCompletion #if display private #end class __ASSET__assets_grass_jpg extends lime.graphics.Image {}
+@:keep @:image("assets/trinket_diffuse.jpg") @:noCompletion #if display private #end class __ASSET__assets_trinket_diffuse_jpg extends lime.graphics.Image {}
+@:keep @:image("assets/trinket_normal.jpg") @:noCompletion #if display private #end class __ASSET__assets_trinket_normal_jpg extends lime.graphics.Image {}
+@:keep @:image("assets/trinket_specular.jpg") @:noCompletion #if display private #end class __ASSET__assets_trinket_specular_jpg extends lime.graphics.Image {}
 @:keep @:file("") @:noCompletion #if display private #end class __ASSET__manifest_default_json extends haxe.io.Bytes {}
 
 

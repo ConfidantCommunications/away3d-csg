@@ -1,8 +1,6 @@
 package away3d.csg;
 
-import openfl.geom.Vector3D;// as Vector3;
-// import away3d.geom.*;
-// import away3d.utils.*;
+import openfl.geom.Vector3D;
 
 import openfl.geom.Matrix3D;
 import away3d.csg.geom.IVertex;
@@ -52,9 +50,6 @@ import away3d.csg.geom.Vertex;
 	 * union is `A | B`, subtraction is `A - B = ~(~A | B)` and intersection is
 	 * `A & B = ~(~A | ~B)` where `~` is the complement operator.
 	 * 
-	 * ## License
-	 * 
-	 * Copyright (c) 2011 Evan Wallace (http://madebyevan.com/), under the MIT license.
 	 *
 	 * class CSG
 	 *

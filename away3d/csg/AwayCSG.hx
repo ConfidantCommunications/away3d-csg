@@ -12,7 +12,6 @@ import openfl.Vector;
 
 import away3d.csg.CSG;
 import away3d.csg.geom.*;
-// import haxe.ds.Vector;
 
 import openfl.geom.Vector3D;
 import openfl.utils.Dictionary;

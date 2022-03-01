@@ -1,0 +1,10 @@
+{
+	"name": "away3d-csg",
+	"url": "https://github.com/ConfidantCommunications/away3d-csg",
+	"license": "MIT",
+	"tags": [ "away3d", "openfl", "cross", "3d", "cross-platform", "haxe", "geometry", "boolean" ],
+	"description": "This library enhances the Haxe version of Away3D with features for Constructive Solid Geometry (CSG) operations, i.e. boolean operations on model meshes.",
+	"version": "1.0.0",
+	"releasenote": "Initial release. Thank you to all contributors, you’re the best!",
+	"contributors": [ "Greg209", "ConfidantCommunications", "vujadin", "timknip", "evanw" ]
+}

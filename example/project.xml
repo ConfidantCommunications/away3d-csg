@@ -8,10 +8,9 @@
 	<window width="1024" height="700" if="desktop" />
 	
 	<source path="src" />
+	<source path="../" />
 	
-	<haxelib name="away3d" />
+	<haxelib name="away3d" version="5.0.9" />
 	<assets path="assets" include="*" embed="true" />
-
-	
 	
 </project>
