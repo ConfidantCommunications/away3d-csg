@@ -26,17 +26,11 @@ package away3d.csg;
 		
 		override public function clone():IVertex
 		{
-			/*
-				GC: Normal and UV params were swapped over
-			*/
 			return new AwayCSGVertex(pos.clone(), normal.clone(), uv.clone());	
 		}
 		
 		override public function interpolate(other:IVertex, t:Float):IVertex
 		{
-			/*
-				GC: Normal and UV params were swapped over
-			*/
 			return new AwayCSGVertex(
 					lerp(this.pos, cast(other,AwayCSGVertex).pos, t),
 					lerp(this.normal, cast(other,AwayCSGVertex).normal, t),

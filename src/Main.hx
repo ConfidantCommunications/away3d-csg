@@ -17,14 +17,11 @@ import away3d.tools.helpers.MeshHelper;
 import away3d.csg.CSG;
 import openfl.Assets;
 import openfl.display.*;
+import openfl.events.KeyboardEvent;
+import openfl.ui.Keyboard;
 
-// import openfl.display.Sprite;
-// import openfl.display.StageAlign;
-// import openfl.display.StageScaleMode;
 import openfl.events.Event;
 import openfl.geom.Vector3D;
-// import flash.utils.getTimer;
-// import openfl.utils.
 
 @:access(away3d.core.base.ISubGeometry)
 class Main extends Sprite
@@ -38,8 +35,12 @@ class Main extends Sprite
 	private var lightPicker:StaticLightPicker;
 	
 	//scene objects
-	private var _mesh:Mesh;
+	private var resultMesh:Mesh;
 	private var mesh1:Mesh;
+
+	private var cubeMaterial:TextureMaterial;
+	private var cube:Mesh;
+	private var cubeCSGMesh:Mesh;
 	
 	public function new()
 	{
@@ -54,13 +55,14 @@ class Main extends Sprite
 		
 		//setup the camera
 		_view.camera.z = -100;
-		_view.camera.y = 50;
+		_view.camera.y = 20;
 		_view.camera.lookAt(new Vector3D());
 		
 		_view.antiAlias = 4;
 		
 		initLights();
 		
+		stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		stage.addEventListener(Event.RESIZE, onResize);
 		onResize();
 		
@@ -75,102 +77,69 @@ class Main extends Sprite
 		var material1:ColorMaterial = new ColorMaterial(0xff0000);//red
 		var material2:ColorMaterial = new ColorMaterial(0x00ff00);//green
 		var material3:ColorMaterial = new ColorMaterial(0x0000ff);//blue
-		var grassMaterial:TextureMaterial = new TextureMaterial(Cast.bitmapTexture("assets/grass.jpg"));//grass
 		
-		
+		cubeMaterial = new TextureMaterial(Cast.bitmapTexture("assets/trinket_diffuse.jpg"));
+		cubeMaterial.specularMap = Cast.bitmapTexture("assets/trinket_specular.jpg");
+		cubeMaterial.normalMap = Cast.bitmapTexture("assets/trinket_normal.jpg");
+		cubeMaterial.lightPicker = lightPicker;
+		cubeMaterial.mipmap = false;
+
+		cube = new Mesh(new CubeGeometry(40,40,40,1,1,1,false));
+		cube.subMeshes[0].material = cubeMaterial;
+		cube.x = 50;
+		_view.scene.addChild(cube);
+
+		// trace("Cube ====================");
+		// dumpGeom( cube );
+		// for (sg in cube.geometry.subGeometries)
+		// 	trace("VertexData-geoms:"+sg.vertexData);
+
 		material1.lightPicker = lightPicker;
 		material2.lightPicker = lightPicker;
 		material3.lightPicker = lightPicker;
-		grassMaterial.lightPicker = lightPicker;
-		
-		mesh1 = new Mesh(new CubeGeometry(1,1,1), grassMaterial);//grass
-		// GC:Debug 
-		// trace("MESH1 ====================");
-		// dumpGeom( mesh1 );
-		var mesh1b:Mesh = new Mesh(new CubeGeometry(1,1,1), material1);//red
-		var mesh2:Mesh = new Mesh(new SphereGeometry(1), material2);//green
-		mesh2.y = mesh2.z = 0.5;
-		mesh2.x = 0.2;
-		// var mesh2:Mesh = new Mesh(new CubeGeometry(10,10,10), material1);
-		// var submesh1:SubMesh = new SubMesh(cast(new CubeGeometry(1,1,1)), null,material1);
-		// var submesh2:SubMesh = new SubMesh(cast(new CubeGeometry(1,1,1)), null,material2);
-		// submesh1.x = 1;
+				
+		var redCube:Mesh = new Mesh(new CubeGeometry(40,40,40), material1);//red
+		redCube.y = redCube.z = 20;
+		redCube.x = 20;
+		redCube.rotationX = 23;
+		redCube.rotationY = 64;
+		var sphere:Mesh = new Mesh(new SphereGeometry(40), material2);//green
+		sphere.y = 30;
+		sphere.z = 10;
+		sphere.x = -10;
+
 		var g = new Geometry();
-		g.addSubGeometry(mesh1.geometry.subGeometries[0]);
+		g.addSubGeometry(cube.geometry.subGeometries[0].clone());
 		var combinedMesh = new Mesh(g,null);
-		MeshHelper.applyPosition(combinedMesh,1,0,0);
-		g.addSubGeometry(mesh1b.geometry.subGeometries[0]);
+		MeshHelper.applyPosition(combinedMesh,40,0,0);
+		g.addSubGeometry(redCube.geometry.subGeometries[0]);
 		
-		// combinedMesh.material.dispose();
-		combinedMesh.subMeshes[0].material = material1;//red
-		combinedMesh.subMeshes[1].material = grassMaterial;//green
-		trace("submesh count:"+combinedMesh.subMeshes.length);
+		combinedMesh.subMeshes[0].material = cubeMaterial;
+		combinedMesh.subMeshes[1].material = material1;//red
 
-		//this is not retained after conversion to CSG:
-		// for(m in mesh1.subMeshes){
-			// m.subGeometry.scaleUV(2,2);
-			
-		// }
-		//or:
-		// mesh1.geometry.scaleUV(10,10);
-
-		// _view.scene.addChild(combinedMesh); 
-		var csg1:CSG = AwayCSG.fromMesh(combinedMesh);//mesh1
-		var csg2:CSG = AwayCSG.fromMesh(mesh2);//green sphere
-		// GC:Debug 
-		// var m1:CSG = AwayCSG.fromMesh(mesh1);
-		// var m1b:CSG = AwayCSG.fromMesh(mesh1b);
+		var redCubeCSG:CSG = AwayCSG.fromMesh(redCube);
+		var sphereCSG:CSG = AwayCSG.fromMesh(sphere);
+		var combinedCSG:CSG = AwayCSG.fromMesh(combinedMesh);
+		var cubeCSG = AwayCSG.fromMesh(cube);//mesh1
 		
-		
-		var result:CSG = csg1.subtract(csg2);
+		var resultCSG:CSG = combinedCSG.subtract(sphereCSG);
 		// var result:CSG = csg1.union(csg2);
 		// var result:CSG = csg1.intersect(csg2);
 		// var cube = CSG.cube(null,new Vector3D(.9,.9,.9));
-		_mesh = AwayCSG.toMesh(result);//result uses toSubGeometry, this should be okay
+		// _mesh = AwayCSG.toMesh(result);//result uses toSubGeometry, this should be okay
+		// _mesh.showBounds = true;
+
+		resultMesh = AwayCSG.toMesh(resultCSG);//result uses toSubGeometry, this should be okay
+		resultMesh.showBounds = true;
+
+		resultMesh.x = -30;
+		_view.scene.addChild(resultMesh); 
 
 		// GC:Debug 
-		// trace("_MESH ====================");
-		// dumpGeom( _mesh );
-
-		if(_mesh != null){
-			_mesh.scaleY = _mesh.scaleX = _mesh.scaleZ = 40;
-			mesh1.scaleY = mesh1.scaleX = mesh1.scaleZ = 20;
-
-			//this shows solid:
-			/* for(m in _mesh.subMeshes){
-				m.material = grassMaterial;//green
-
-			} */
-
-			_view.scene.addChild(_mesh); 
-			_view.scene.addChild(mesh1); 
-			mesh1.x = 80;
-			
-		}
-		
-		/* 
-		// THIS SECTION WORKS AND DISPLAYS IN AWAY3D.
-		var cube = CSG.cube(null,new Vector3D(.9,.9,.9));
-		var sphere = CSG.sphere(new Vector3D(0.2,0.8,0.1),1.3);//center:Vector3D=null, radius:Float=1, slices:Int=16, stacks:Int=8
-		var polygons = cube.subtract(sphere).toPolygons();
-		// var polygons = cube.union(sphere).toPolygons();
-		// var polygons = cube.intersect(sphere).toPolygons();
-		trace("Here's a CSG cube");
-		trace(cube.toPolygons());
-
-		var subs = new Array<SubGeometry>();
-		for(p in polygons){
-			subs.push(AwayCSG.toSubGeometry(p));
-
-		}
-
-		var geometry = new Geometry();
-		for (sub in subs) { //will cast sub from MaterialBase to SubGeometry
-			geometry.addSubGeometry(sub);
-		}
-
-		_mesh = new Mesh(geometry, material1); */
-
+		// trace("resultMesh ====================");
+		// dumpGeom( resultMesh );
+		// for (sg in resultMesh.geometry.subGeometries)
+		// 	trace("VertexData-geoms:"+sg.vertexData);
 	}
 	
 	// GC:Debug 
@@ -180,11 +149,11 @@ class Main extends Sprite
 		trace("SubMeshes="+m.subMeshes.length);
 		for  (subMesh in m.subMeshes) {
 			var g = subMesh.subGeometry;
-			var vstride = g.vertexStride ; //13
-			var uvstride:Int = g.UVStride;//2;
-			var nstride:Int = g.vertexNormalStride;
-
-			trace("VStride="+vstride+" UVStride="+uvstride+" NStride="+nstride+" step="+step);
+			var stride = g.vertexStride ; //13
+			var uvoffset:Int = g.UVOffset;//2;
+			var vnoffset:Int = g.vertexNormalOffset;
+	
+			trace("Stride="+stride+" UVOffset="+uvoffset+" VNOffset="+vnoffset+" step="+step+" indexLength="+g.indexData.length);
 			var i = 0;
 			while(i < g.indexData.length) {
 				var a:Int = g.indexData[i+0];
@@ -192,17 +161,17 @@ class Main extends Sprite
 				var c:Int = g.indexData[i+2];
 
 				var t = "";
-				t += "V0("+ g.vertexData[(a*vstride)+0]+", "+g.vertexData[(a*vstride)+1]+", "+g.vertexData[(a*vstride)+2]+") ";
-				t += "V1("+ g.vertexData[(b*vstride)+0]+", "+g.vertexData[(b*vstride)+1]+", "+g.vertexData[(b*vstride)+2]+") ";
-				t += "V2("+ g.vertexData[(c*vstride)+0]+", "+g.vertexData[(c*vstride)+1]+", "+g.vertexData[(c*vstride)+2]+") ";
+				t += "V0("+ g.vertexData[(a*stride)+0]+", "+g.vertexData[(a*stride)+1]+", "+g.vertexData[(a*stride)+2]+") ";
+				t += "V1("+ g.vertexData[(b*stride)+0]+", "+g.vertexData[(b*stride)+1]+", "+g.vertexData[(b*stride)+2]+") ";
+				t += "V2("+ g.vertexData[(c*stride)+0]+", "+g.vertexData[(c*stride)+1]+", "+g.vertexData[(c*stride)+2]+") ";
 	
-				t += "UV0("+ g.UVData[(a*uvstride)+0]+", "+g.UVData[(a*uvstride)+1]+") ";
-				t += "UV1("+ g.UVData[(b*uvstride)+0]+", "+g.UVData[(b*uvstride)+1]+") ";
-				t += "UV2("+ g.UVData[(c*uvstride)+0]+", "+g.UVData[(c*uvstride)+1]+") ";
+				t += "UV0("+ g.UVData[(a*stride)+uvoffset+0]+", "+g.UVData[(a*stride)+uvoffset+1]+") ";
+				t += "UV1("+ g.UVData[(b*stride)+uvoffset+0]+", "+g.UVData[(b*stride)+uvoffset+1]+") ";
+				t += "UV2("+ g.UVData[(c*stride)+uvoffset+0]+", "+g.UVData[(c*stride)+uvoffset+1]+") ";
 				
-				t += "N0("+ g.vertexNormalData[(a*nstride)+0]+", "+g.vertexNormalData[(a*nstride)+1]+", "+g.vertexNormalData[(a*nstride)+2]+") ";
-				t += "N1("+ g.vertexNormalData[(b*nstride)+0]+", "+g.vertexNormalData[(b*nstride)+1]+", "+g.vertexNormalData[(b*nstride)+2]+") ";
-				t += "N2("+ g.vertexNormalData[(c*nstride)+0]+", "+g.vertexNormalData[(c*nstride)+1]+", "+g.vertexNormalData[(c*nstride)+2]+") ";
+				t += "N0("+ g.vertexNormalData[(a*stride)+vnoffset+0]+", "+g.vertexNormalData[(a*stride)+vnoffset+1]+", "+g.vertexNormalData[(a*stride)+vnoffset+2]+") ";
+				t += "N1("+ g.vertexNormalData[(b*stride)+vnoffset+0]+", "+g.vertexNormalData[(b*stride)+vnoffset+1]+", "+g.vertexNormalData[(b*stride)+vnoffset+2]+") ";
+				t += "N2("+ g.vertexNormalData[(c*stride)+vnoffset+0]+", "+g.vertexNormalData[(c*stride)+vnoffset+1]+", "+g.vertexNormalData[(c*stride)+vnoffset+2]+") ";
 				trace(t);
 				
 				i += step;
@@ -239,12 +208,12 @@ class Main extends Sprite
 	 */
 	private function _onEnterFrame(e:Event):Void
 	{
-		if (_mesh != null) {
-			_mesh.rotationY += 1;
-		}
-		if (mesh1 != null) {
-			mesh1.rotationY -= 1;
-		}
+		// if (_mesh != null) {
+		// 	_mesh.rotationY += 1;
+		// }
+		// if (mesh1 != null) {
+		// 	mesh1.rotationY -= 1;
+		// }
 		// light1.direction = new Vector3D(Math.sin(getTimer()/10000)*150000, 1000, Math.cos(getTimer()/10000)*150000);
 		_view.render();
 	}
@@ -256,5 +225,20 @@ class Main extends Sprite
 	{
 		_view.width = stage.stageWidth;
 		_view.height = stage.stageHeight;
+	}
+
+	/**
+	 * stage listener for keyboard events
+	 */
+	private function onKeyDown(event:KeyboardEvent = null):Void
+	{
+		if (event.keyCode == Keyboard.UP) 
+			_view.camera.z += event.shiftKey ? 10 : 1;
+		if (event.keyCode == Keyboard.DOWN) 
+			_view.camera.z -= event.shiftKey ? 10 : 1;
+		if (event.keyCode == Keyboard.LEFT)
+			resultMesh.rotationY = cube.rotationY += event.shiftKey ? 10 : 1;
+		if (event.keyCode == Keyboard.RIGHT)
+			resultMesh.rotationY = cube.rotationY -= event.shiftKey ? 10 : 1;
 	}
 }

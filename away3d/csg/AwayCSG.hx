@@ -17,6 +17,17 @@ import away3d.csg.geom.*;
 import openfl.geom.Vector3D;
 import openfl.utils.Dictionary;
 
+// GC:
+// Introduced new CompactSubGeometry data holder
+// to accumulate all the verts, normals, uvs and indexes
+// for a SubMesh
+typedef CompactSubGeomData = {
+	var verts:Vector<Float>;
+	var uvs:Vector<Float>;
+	var normals:Vector<Float>;
+	var indices:Vector<Int>;
+}
+
 class AwayCSG
 {
 
@@ -26,7 +37,7 @@ class AwayCSG
 	public static function fromMesh(mesh:Mesh):CSG
 	{
 		var polygons:Array<Polygon> = new Array<Polygon>();
-		
+		trace("csg from mesh");
 		var i:Int = 0;
 		for  (subMesh in mesh.subMeshes) {
 			polygons = polygons.concat(fromSubGeometry(mesh, subMesh.subGeometry, subMesh));
@@ -34,23 +45,6 @@ class AwayCSG
 		// trace(polygons);
 		return CSG.fromPolygons(polygons);
 	} 
-
-	//this one sorta works in rta
-	/* public static function fromMesh(mesh:Mesh):CSG
-	{
-		var polygons:Array<Polygon> = new Array<Polygon>();
-		
-		var i:Int = 0;
-		for  (subGeometry in mesh.geometry.subGeometries) {
-			// trace("casting subGeometry 1");
-			var subMesh = mesh.subMeshes[i];
-			polygons = polygons.concat(fromSubGeometry(mesh, subGeometry, subMesh));
-		}
-		// trace(polygons);
-		return CSG.fromPolygons(polygons);
-	}  */
-
-
 	
 	/**
 	 * 
@@ -62,12 +56,6 @@ class AwayCSG
 		var step = 3;
 
 		var stride = geometry.vertexStride ; //13
-		/*
-			GC: Now using UVOffset rather than UVStride. With compact geometries, the 
-			vertex data, UV and normals are all in the same buffer. Stride is 13 and
-			for each stride the vertices, UVs and Normals are positioned at the offset 
-			from that.
-		*/
 		var uvoffset:Int = geometry.UVOffset;//2;
 		var vnoffset:Int = geometry.vertexNormalOffset;
 
@@ -83,15 +71,12 @@ class AwayCSG
 			var uv1:Vector3D = new Vector3D();
 			var uv2:Vector3D = new Vector3D();
 			var uv3:Vector3D = new Vector3D();
-
-			//new for fixing texture display:
 			var vn1:Vector3D = new Vector3D();
 			var vn2:Vector3D = new Vector3D();
 			var vn3:Vector3D = new Vector3D();
 
 			var vertices:Array<IVertex> = new Array<IVertex>();
 
-			
 			v1.x = geometry.vertexData[(a*stride)+0];
 			v1.y = geometry.vertexData[(a*stride)+1];
 			v1.z = geometry.vertexData[(a*stride)+2];
@@ -109,10 +94,6 @@ class AwayCSG
 			v2 = mesh.transform.transformVector(v2);
 			v3 = mesh.transform.transformVector(v3);
 			
-			/*
-				GC: Again with CompactSubGeometries, it turns out the vertexData
-				UVData and vertexNormalData actually return the same vertex buffer
-			*/
 			uv1.x = geometry.UVData[(a*stride)+uvoffset+0];
 			uv1.y = geometry.UVData[(a*stride)+uvoffset+1];
 
@@ -122,9 +103,6 @@ class AwayCSG
 			uv3.x = geometry.UVData[(c*stride)+uvoffset+0];
 			uv3.y = geometry.UVData[(c*stride)+uvoffset+1];
 			
-			/*
-				GC: Normals have a z coordinate too. This was missing
-			*/
 			vn1.x = geometry.vertexNormalData[(a*stride)+vnoffset+0];
 			vn1.y = geometry.vertexNormalData[(a*stride)+vnoffset+1];
 			vn1.z = geometry.vertexNormalData[(a*stride)+vnoffset+2];
@@ -135,20 +113,14 @@ class AwayCSG
 			vn3.y = geometry.vertexNormalData[(c*stride)+vnoffset+1];
 			vn3.z = geometry.vertexNormalData[(c*stride)+vnoffset+2];
 			
-			//away3d away3d.csg.geom.Vertex doesn't have its own UV info
-			// subGeometry.updateUVData(uvs);
-			
 			vertices.push(new AwayCSGVertex(v1, vn1, uv1)); //works with a regular vertex
 			vertices.push(new AwayCSGVertex(v2, vn2, uv2));
 			vertices.push(new AwayCSGVertex(v3, vn3, uv3));
 			
 			if(subMesh.material != null){
-				// trace("material1 scaleU:"+subMesh.subGeometry.scaleU);
 				polygons.push(new Polygon(vertices, subMesh.material));
 			} else {
-				// trace("material2:"+mesh.material);
 				polygons.push(new Polygon(vertices, mesh.material));
-
 			}
 
 			i += step;
@@ -156,119 +128,72 @@ class AwayCSG
 		return polygons;
 	}
 	
-	/* 
-	public static function toRandomColorMesh(csg:CSG):Mesh {
-		var polygons:Array<Polygon> = csg.toPolygons();
-		var mesh = new Mesh(null, null);
-		for (polygon in polygons) {
-			var subGeometry:SubGeometry = toSubGeometry(polygon);
-			mesh.subMeshes.push(new SubMesh(subGeometry, mesh, randomColorMaterial()));
-		}
-		function randomColorMaterial():ColorMaterial {
-			var color = '#';
-			for ( i in 0...6){
-			   var random = Math.random();
-			   var bit = Math.floor(random * 16) | 0;
-			   color += Std.str(bit).toString(16);
-			};
-			return color;
-		 };
-		 return mesh;
-	} */
-
 	public static function toMesh(csg:CSG):Mesh
-		{
-			var polygons:Array<Polygon> = csg.toPolygons();
-
-			//once I tried: var byMaterial:Map<MaterialBase,Array<SubGeometry>>
-			var byMaterial:Dictionary<Any,Array<SubGeometry>> = new Dictionary<Any,Array<SubGeometry>>();
-			// var mesh:Mesh = null;
-			var mesh = new Mesh(null, null);
-			//first collect all the polygons of like material into single arrays
-			for (polygon in polygons) {
-				var subGeometry:SubGeometry = toSubGeometry(polygon);
-				if (Std.is(polygon.shared, MaterialBase)) {
-					if (byMaterial[polygon.shared]==null) {
-						byMaterial[polygon.shared] = [];
-					}
-					byMaterial[polygon.shared].push(subGeometry);
-				}
-			}
-			//now for each material, make a single submesh
-			
-			for (key in byMaterial) {
-				//these should be materials. find out what kind
-				// if (Std.is(key, TextureMaterial))
-				// var material:MaterialBase = cast(key, MaterialBase); //	we are losing the Texture Materials!
-				var	geometry:Geometry = new Geometry();
-				var	subGeometries:Array<SubGeometry> = byMaterial[key];
-				
-				for (sub in subGeometries) {
-					mesh.subMeshes.push(new SubMesh(sub, mesh, key));
-					mesh.geometry.subGeometries.push( sub );//required to update bounding box and obtain proper frustum clipping
-				}
-			}
-			return mesh;
-			 
-		}
-	
-	/**
-	 * Creates a sub-geometry from a Polygon.
-	 * 
-	 * @param polygon
-	 * 
-	 * @return SubGeometry
-	 */ 
-	public static function toSubGeometry(polygon:Polygon):SubGeometry
 	{
-		var geometry:SubGeometry = new SubGeometry();
-		var numVertices:Int = polygon.vertices.length;
-		var vertices:Vector<Float> = new Vector<Float>(numVertices * 3);
-		var normals:Vector<Float> = new Vector<Float>(numVertices * 3);
-		var uvs:Vector<Float> = new Vector<Float>(numVertices * 2);
-		var indices:Vector<Int> = new Vector<Int>(numVertices * 3);
-		var normal:Vector3D = polygon.plane.normal;
-		var index:Int = 0;
-		
-		
-		for(i in 0...numVertices) {
-			
-		// for (var i:int = 0; i < numVertices; i++) {
-			var v:Vector3D = polygon.vertices[i].pos;
+		var polygons:Array<Polygon> = csg.toPolygons();
+		// GC: Changed the byMaterial to use the CompactSubGeomData
+		var byMaterial:Dictionary<Any,CompactSubGeomData> = new Dictionary<Any,CompactSubGeomData>();
+		var mesh = new Mesh(null, null);
 
-			/*
-				GC: Your comment was correct ;) 
-				It couldn't cast the normals or the UVs as additional params
-			*/
-			var p:AwayCSGVertex = cast polygon.vertices[i];
-			var vert = new AwayCSGVertex(p.pos, p.normal, p.uv); //not sure about the cast
-			var uv = vert.uv;
-			trace("CastUV:"+uv);
-			
-			vertices[(i*3)+0] = v.x * AWAY3D_VERTEX_CONVERSION_FACTOR;
-			vertices[(i*3)+1] = v.y * AWAY3D_VERTEX_CONVERSION_FACTOR;
-			vertices[(i*3)+2] = v.z * AWAY3D_VERTEX_CONVERSION_FACTOR;
-			
-			normals[(i*3)+0] = normal.x;
-			normals[(i*3)+1] = normal.y;
-			normals[(i*3)+2] = normal.z;
-			
-			uvs[(i*2)+0] = uv.x;
-			uvs[(i*2)+1] = uv.y;
-
-			indices[index++] = 0;
-			indices[index++] = (i+1) % numVertices;
-			indices[index++] = (i+2) % numVertices;
-
+		// GC: Iterate over the polgons and add each to the corresponding 
+		// material compactSubGeomData object
+		for (p in polygons) {
+			if (Std.is(p.shared, MaterialBase)) {
+				if (byMaterial[p.shared]==null) {
+					byMaterial[p.shared] = { verts: null, uvs: null, normals: null, indices: null };
+					byMaterial[p.shared].verts = new Vector<Float>();
+					byMaterial[p.shared].uvs = new Vector<Float>();
+					byMaterial[p.shared].normals = new Vector<Float>();
+					byMaterial[p.shared].indices = new Vector<Int>();
+				}
+				addPoly(byMaterial[p.shared], p);
+			}
 		}
 
-		geometry.updateVertexData(vertices);
-		geometry.updateVertexNormalData(normals);
-		geometry.updateUVData(uvs);
-		geometry.updateIndexData(indices);
-		geometry.autoDeriveVertexTangents = true;
-		// trace("material1 scaleU after:"+geometry.scaleU);
+		// GC: Once all the polygons have been processed into each
+		// compactsubgeomdata, build the actual CompactSubGeometry
+		for (matKey in byMaterial) {
+			var csgData = byMaterial[matKey];
+			var csg = new CompactSubGeometry();
+			csg.fromVectors( csgData.verts, csgData.uvs, csgData.normals, null );
+			csg.updateIndexData( csgData.indices );
+			csg.autoDeriveVertexTangents = true;
+			mesh.subMeshes.push( new SubMesh(csg, mesh, matKey) );
+			mesh.geometry.subGeometries.push( csg );
+		}
+
+		return mesh;
+	}
+	
+	/*
+	  Add the Polygon faces to the CompactSubGeomData and build it up
+	  until there is a complete set of faces for the mesh
+	*/
+	private static function addPoly( csgd:CompactSubGeomData, poly:Polygon) {
+		var numVertices = poly.vertices.length;
+		var baseIndex = Std.int(csgd.verts.length / 3);
 		
-		return geometry;
+		// Add the main vertex data
+		for (i in 0...numVertices) {
+			var p:AwayCSGVertex = cast poly.vertices[i];
+			var v = p.pos;
+			var uv = p.uv;
+			var normal = p.normal;
+
+			csgd.verts = csgd.verts.concat( Vector.ofArray([ v.x * AWAY3D_VERTEX_CONVERSION_FACTOR, v.y * AWAY3D_VERTEX_CONVERSION_FACTOR, v.z * AWAY3D_VERTEX_CONVERSION_FACTOR ]));
+			csgd.normals = csgd.normals.concat( Vector.ofArray([ normal.x, normal.y, normal.z ]) );
+			csgd.uvs = csgd.uvs.concat( Vector.ofArray([ uv.x, uv.y ]) );
+		}
+
+		// Establish the indices data/vertex order
+		var indices = [0, 1, 2];
+		if (numVertices > 3)
+			for (i in 2...numVertices-1)
+				indices = indices.concat([0, i, i+1]);
+		
+		// Add the index using the vertex offset from the previous polygon 
+		// (baseIndex : num of verts so far / 3)
+		for (i in 0...indices.length)
+			csgd.indices.push( baseIndex + indices[i] );
 	}
 }
